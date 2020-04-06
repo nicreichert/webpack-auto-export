@@ -1,0 +1,23 @@
+{
+  "name": "webpack-auto-export",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicreichert/webpack-auto-import.git"
+  },
+  "keywords": [
+    "webpack",
+    "auto-import"
+  ],
+  "author": {
+    "name": "Nic Reichert",
+    "email": "nicolas.jreichert@gmail.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nicreichert/webpack-auto-import/issues"
+  },
+  "homepage": "https://github.com/nicreichert/webpack-auto-import#readme"
+}
