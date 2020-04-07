@@ -27,39 +27,39 @@ const arrayEquals = (arr1, arr2) =>
     return u === arr2[i];
   });
 
-createExports = (exportType, folder, path) => {
-  const fileName = folder.split('.')[0];
-
-  const exps = {
-    default: `export { default as ${fileName} } from './${fileName}';`,
-    named: `export * from './${fileName}';`,
-  };
-
-  const detect = () => {
-    let filePath = join(path, folder);
-    const file = fs.lstatSync(filePath);
-    if (file.isDirectory()) {
-      filePath = getFilesWithExtension(filePath)
-        .filter(f => f.includes(`index${this.options.extension}`))
-        .pop();
-    }
-
-    const fileStream = fs.readFileSync(filePath, 'utf8');
-
-    const hasDefaultExport = fileStream
-      .toString()
-      .split('\n')
-      .find(s => s.startsWith('export default'));
-    return hasDefaultExport ? exps.default : exps.named;
-  };
-
-  return exps[exportType] || detect(folder);
-};
-
 module.exports = class CreateExports {
   constructor(options) {
     this.options = options;
   }
+
+  createExports = (exportType, folder, path) => {
+    const fileName = folder.split('.')[0];
+
+    const exps = {
+      default: `export { default as ${fileName} } from './${fileName}';`,
+      named: `export * from './${fileName}';`,
+    };
+
+    const detect = () => {
+      let filePath = join(path, folder);
+      const file = fs.lstatSync(filePath);
+      if (file.isDirectory()) {
+        filePath = getFilesWithExtension(filePath)
+          .filter(f => f.includes(`index${this.options.extension}`))
+          .pop();
+      }
+
+      const fileStream = fs.readFileSync(filePath, 'utf8');
+
+      const hasDefaultExport = fileStream
+        .toString()
+        .split('\n')
+        .find(s => s.startsWith('export default'));
+      return hasDefaultExport ? exps.default : exps.named;
+    };
+
+    return exps[exportType] || detect(folder);
+  };
 
   apply(compiler) {
     compiler.hooks.compilation.tap('CreateExports', compilation => {
@@ -78,7 +78,7 @@ module.exports = class CreateExports {
 
         try {
           const imports = entries.reduce(
-            (acc, folder) => `${acc}${createExports(exportType, folder, path)}\n`,
+            (acc, folder) => `${acc}${this.createExports(exportType, folder, path)}\n`,
             '',
           );
 
