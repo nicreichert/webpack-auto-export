@@ -1,18 +1,19 @@
-const fs = require('fs');
-const { join } = require('path');
+const fs = require("fs");
+const { join } = require("path");
 
-const getFilesWithExtension = source => fs.readdirSync(source).map(name => join(source, name));
+const getFilesWithExtension = (source) =>
+  fs.readdirSync(source).map((name) => join(source, name));
 
-const getFiles = source =>
+const getFiles = (source) =>
   fs
     .readdirSync(source)
-    .map(name => join(source, name))
-    .filter(s => !s.includes('index'))
-    .map(name => name.split('/').pop());
+    .map((name) => join(source, name))
+    .filter((s) => !s.includes("index"))
+    .map((name) => name.split("/").pop());
 
 const foldersMap = new Map();
 
-const getFolders = key => {
+const getFolders = (key) => {
   let folders = foldersMap.get(key);
   if (!folders) {
     folders = [];
@@ -23,7 +24,7 @@ const getFolders = key => {
 
 const arrayEquals = (arr1, arr2) =>
   arr1.length == arr2.length &&
-  arr1.every(function(u, i) {
+  arr1.every(function (u, i) {
     return u === arr2[i];
   });
 
@@ -33,7 +34,7 @@ module.exports = class CreateExports {
   }
 
   createExports = (exportType, folder, path) => {
-    const fileName = folder.split('.')[0];
+    const fileName = folder.split(".")[0];
 
     const exps = {
       default: `export { default as ${fileName} } from './${fileName}';`,
@@ -45,16 +46,16 @@ module.exports = class CreateExports {
       const file = fs.lstatSync(filePath);
       if (file.isDirectory()) {
         filePath = getFilesWithExtension(filePath)
-          .filter(f => f.includes(`index${this.options.extension}`))
+          .filter((f) => f.includes(`index${this.options.extension}`))
           .pop();
       }
 
-      const fileStream = fs.readFileSync(filePath, 'utf8');
+      const fileStream = fs.readFileSync(filePath, "utf8");
 
       const hasDefaultExport = fileStream
         .toString()
-        .split('\n')
-        .find(s => s.startsWith('export default'));
+        .split("\n")
+        .find((s) => s.startsWith("export default"));
       return hasDefaultExport ? exps.default : exps.named;
     };
 
@@ -62,27 +63,39 @@ module.exports = class CreateExports {
   };
 
   apply(compiler) {
-    compiler.hooks.compilation.tap('CreateExports', compilation => {
+    compiler.hooks.compilation.tap("CreateExports", (compilation) => {
       const { baseDir, extension, paths } = this.options;
 
-      paths.forEach(p => {
-        const exportType = p.exportType || this.options.exportType || 'named';
-        const path = join(baseDir || process.cwd(), typeof p === 'string' ? p : p.path);
+      paths.forEach((p) => {
+        const exportType = p.exportType || this.options.exportType || "named";
+        const path = join(
+          baseDir || process.cwd(),
+          typeof p === "string" ? p : p.path
+        );
 
-        const entries = getFiles(path);
+        let entries = getFiles(path);
         if (arrayEquals(entries, getFolders(path))) {
           return;
         }
 
         foldersMap.set(path, entries);
 
+        if (p.ignore) {
+          entries = entries.filter((e) =>
+            typeof p.ignore === "string"
+              ? !e.includes(p.ignore)
+              : !p.ignore.test(e)
+          );
+        }
+
         try {
           const imports = entries.reduce(
-            (acc, folder) => `${acc}${this.createExports(exportType, folder, path)}\n`,
-            '',
+            (acc, folder) =>
+              `${acc}${this.createExports(exportType, folder, path)}\n`,
+            ""
           );
 
-          fs.writeFile(`${path}/index${extension}`, imports, err => {
+          fs.writeFile(`${path}/index${extension}`, imports, (err) => {
             if (err) {
               compilation.errors.push(err);
             }
